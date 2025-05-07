@@ -1,0 +1,62 @@
+name: Debug DNS Extractor
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch_and_commit:
+    runs-on: ubuntu-latest
+    # outputs: # 这些env变量现在在Python脚本中设置，可直接在后续步骤使用
+    #   debug_screenshot: ${{ env.LATEST_DEBUG_SCREENSHOT }}
+    #   debug_pagesource: ${{ env.LATEST_DEBUG_PAGESOURCE }}
+    #   Google_txt_file: ${{ env.Google_TXT_FILE }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install selenium requests selenium-stealth  deep_translator
+
+      - name: Setup ChromeDriver
+        uses: browser-actions/setup-chrome@v1
+        # with:
+        #   chrome-version: "114" # 尝试固定版本，如果自动选择有问题。确保与UA和stealth兼容
+
+      - name: Google
+        id: run_script
+        run: python Google.py
+         
+      - name: Run CloudFlare 
+        run: python CloudFlare.py
+          
+      - name: Upload all debug
+        if: always() # 总是上传，方便调试
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-output-${{ github.run_id }}
+          path: |
+            *.png
+            *.html
+            *.txt
+          if-no-files-found: ignore # 如果没有匹配的文件则忽略
+          
+      - name: Commit and push changes
+        run: |
+          git config --global user.email "tianshideyou@proton.me"
+          git config --global user.name "tianshipapa"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add *.txt
+            git commit -m "Automatic update"
+            git push
+          else
+            echo "No changes detected, skipping commit."
+          fi
