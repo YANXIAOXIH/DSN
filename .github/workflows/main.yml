@@ -1,0 +1,81 @@
+name: DNS Extractor
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # 改为每6小时，减少对目标站点的请求频率
+  workflow_dispatch:
+
+jobs:
+  fetch_and_commit:
+    runs-on: ubuntu-latest
+    # outputs: # 这些env变量现在在Python脚本中设置，可直接在后续步骤使用
+    #   debug_screenshot: ${{ env.LATEST_DEBUG_SCREENSHOT }}
+    #   debug_pagesource: ${{ env.LATEST_DEBUG_PAGESOURCE }}
+    #   Google_txt_file: ${{ env.Google_TXT_FILE }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install selenium requests selenium-stealth  deep_translator
+
+      - name: Setup ChromeDriver
+        uses: browser-actions/setup-chrome@v1
+        # with:
+        #   chrome-version: "114" # 尝试固定版本，如果自动选择有问题。确保与UA和stealth兼容
+        
+      - name: Run CloudFlare 
+        run: python CloudFlare.py
+        
+      - name: Google
+        id: run_script
+        run: python Google.py
+
+      - name: Set Release Info
+        run: |
+          echo "RELEASE_TAG_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+          echo "TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+          # 如果你想用日期作为tag，而不是固定的 "DNS"
+          # echo "RELEASE_TAG=dns-$(date +'%Y%m%d')" >> $GITHUB_ENV
+
+      - name: "Upload DNS to GitHub Release"
+        uses: ncipollo/release-action@main
+        if: success() # 确保只在成功时运行
+        with:
+          tag: "DNS" # 或者使用动态tag: ${{ env.RELEASE_TAG }}
+          name: "DNS Data"
+          artifacts: "*.txt"
+          allowUpdates: true
+          removeArtifacts: false #取决于你是否想移除旧的同名文件
+          replacesArtifacts: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          body: | # 使用 |允许多行文本
+            ## 自动更新的 IP 地址与 DNS 相关列表
+
+            此 Release 包含通过自动化脚本从公开来源收集和更新的 IP 地址列表。
+            这些列表旨在为与 DNS 解析、网络测试或特定服务（如 Cloudflare）相关的 IP 地址提供参考。
+
+            **主要附件内容：**
+            * `Google.txt`: 原始抓取 www.nslookup.io 的 IP 地址及其对应国家/地区（中文）的列表。
+            * `CloudFlare.txt`: 原始抓取公开的互联网资源，利用`ip-api.com` 查询 IP 的国家/地区信息
+
+
+            这些列表会通过 GitHub Actions 定期自动更新，以尽可能确保数据的时效性。
+
+            **使用提示：**
+            这些列表按“原样”提供，旨在方便测试和学习。在将其用于任何生产环境或关键应用之前，请务必自行验证其有效性和适用性。
+
+            ---
+            *由 GitHub Actions 自动发布。*
+            *仓库: https://github.com/${{ github.repository }}*
+            *最新提交: https://github.com/${{ github.repository }}/commit/${{ github.sha }}*
+            *发布时间: ${{ env.TIMESTAMP }}*
