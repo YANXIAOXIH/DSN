@@ -47,19 +47,6 @@ jobs:
           # 如果你想用日期作为tag，而不是固定的 "DNS"
           # echo "RELEASE_TAG=dns-$(date +'%Y%m%d')" >> $GITHUB_ENV
 
-      - name: "Upload DNS to GitHub Releas"
-        uses: ncipollo/release-action@main
-        if: success()
-        with:
-          tag: "Armbian_V${{ env.VERSIONOS }}"
-          name: "Armbian_V${{ env.VERSIONOS }}"
-          artifacts: "build/output/images/*"
-          allowUpdates: true
-          removeArtifacts: false
-          replacesArtifacts: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-          bodyFile: "body.html"
-
       - name: "Upload DNS to GitHub Release"
         uses: ncipollo/release-action@main
         if: success() # 确保只在成功时运行
