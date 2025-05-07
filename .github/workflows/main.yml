@@ -51,13 +51,14 @@ jobs:
         uses: ncipollo/release-action@main
         if: success() # 确保只在成功时运行
         with:
-          tag: "DNS" # 或者使用动态tag: ${{ env.RELEASE_TAG }}
-          name: "DNS Data"
-          artifacts: "*.txt"
+          tag_name: "DNS Data"
           allowUpdates: true
           removeArtifacts: false #取决于你是否想移除旧的同名文件
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            Google.txt
+            CloudFlare.txt
           body: | # 使用 |允许多行文本
             ## 自动更新的 IP 地址与 DNS 相关列表
 
