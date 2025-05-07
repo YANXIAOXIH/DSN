@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  fetch_and_commit:
+  Extractor:
     runs-on: ubuntu-latest
     # outputs: # 这些env变量现在在Python脚本中设置，可直接在后续步骤使用
     #   debug_screenshot: ${{ env.LATEST_DEBUG_SCREENSHOT }}
@@ -47,6 +47,7 @@ jobs:
             *.png
             *.html
             *.txt
+            *.strip
           if-no-files-found: ignore # 如果没有匹配的文件则忽略
           
       - name: Commit and push changes
