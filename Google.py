@@ -56,7 +56,7 @@ def click_element_robustly(driver, by, value, timeout=10):
                 print(f"Standard click also failed for ({by}='{value}'): {e_std}")
                 return False
     except TimeoutException: print(f"Element ({by}='{value}') not found/clickable within {timeout}s.")
-    except StaleElementReferenceException: print(f"Element ({by}='{value}') became stale.")
+    except StaleElementReferenceException: print(f"Element ({由}='{value}') became stale.")
     except Exception as e: print(f"Error clicking ({by}='{value}'): {e}")
     return False
 
@@ -202,7 +202,7 @@ def extract_ip_country_dynamic(url, pattern, output_file="Google.txt"):
                     #     print(f"Applying specific fix: changing '{original_country_for_log}' to '{country_final}'")
                     # --- *** 修正结束 *** ---
         
-                    unique_results.add(f"{ip_clean}#{country_final}") 
+                    unique_results.add(f"{ip_clean}#{country_final}.PUG") 
                 else:
                     print(f"Warning: Empty IP or invalid translated Country found - IP:'{ip}', EN_Country:'{country_en_clean}', CN_Country:'{country_cn}'")
 
