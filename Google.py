@@ -18,7 +18,7 @@ def save_debug_info(driver, prefix="error"):
         page_source_path = f"{prefix}_page_source.html"
         current_url = "N/A"
         try: current_url = driver.current_url
-        except Exception: pass 
+        except Exception: pass
         print(f"Saving debug info: URL: {current_url} (prefix: {prefix})")
         driver.save_screenshot(screenshot_path)
         print(f"Debug screenshot saved as: {screenshot_path}")
@@ -37,14 +37,14 @@ def click_element_robustly(driver, by, value, timeout=10):
     try:
         element = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((by, value)))
         element_text = "N/A"
-        try: 
+        try:
             element_text = element.text[:50] if element.text else element.get_attribute('outerHTML')[:70]
         except: pass
         print(f"Element ({by}='{value}') found. Text/HTML: '{element_text}...'. Attempting click.")
         
-        try: 
+        try:
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
-            time.sleep(0.3) 
+            time.sleep(0.3)
             driver.execute_script("arguments[0].click();", element)
             print(f"Clicked element ({by}='{value}') via JS click successfully.")
             return True
@@ -63,53 +63,54 @@ def click_element_robustly(driver, by, value, timeout=10):
     return False
 
 # --- Translation function with caching ---
-translation_cache = {} 
+translation_cache = {}
 try:
-    translator = GoogleTranslator(source='auto', target='zh-CN') 
+    translator = GoogleTranslator(source='auto', target='zh-CN')
 except Exception as e:
     print(f"Error initializing translator: {e}. Translations will be skipped.")
     translator = None
 
 def translate_to_chinese(text):
     global translator, translation_cache
-    if not translator or not text: 
+    if not translator or not text:
         return text
 
-    text = text.strip() 
-    if not text: 
+    text = text.strip()
+    if not text:
         return text
-    if text in translation_cache: 
+    if text in translation_cache:
         return translation_cache[text]
     
     try:
         translated_text = translator.translate(text)
         if translated_text:
-            translation_cache[text] = translated_text.strip() 
+            translation_cache[text] = translated_text.strip()
             print(f"Translated '{text}' to '{translation_cache[text]}'")
             return translation_cache[text]
-        else: 
+        else:
             print(f"Warning: Translation returned empty for '{text}'. Using original.")
-            translation_cache[text] = text 
+            translation_cache[text] = text
             return text
-    except Exception as e: 
+    except Exception as e:
         print(f"Warning: Translation failed for '{text}': {e}. Using original.")
-        translation_cache[text] = text 
+        translation_cache[text] = text
         return text
 # --- End of translation function ---
 
 # --- Main function to extract IP and Country ---
-def extract_ip_country_dynamic(url, pattern, output_file="Google.txt"): 
+# !! IMPORTANT: The 'pattern' argument to this function will now be the NEW google_dns_pattern !!
+def extract_ip_country_dynamic(url, new_google_dns_pattern, output_file="Google.txt"):
     print("Setting up Chrome options...")
     chrome_options = Options()
-    chrome_options.add_argument("--headless=new") 
-    chrome_options.add_argument("--no-sandbox") 
-    chrome_options.add_argument("--disable-dev-shm-usage") 
-    chrome_options.add_argument("--disable-gpu") 
-    chrome_options.add_argument("--window-size=1920,1080") 
-    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36") 
-    chrome_options.add_argument('--disable-blink-features=AutomationControlled') 
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"]) 
-    chrome_options.add_experimental_option('useAutomationExtension', False) 
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+    chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option('useAutomationExtension', False)
 
     print("Initializing Chrome WebDriver...")
     driver = None
@@ -129,121 +130,105 @@ def extract_ip_country_dynamic(url, pattern, output_file="Google.txt"):
         print(f"Navigating to URL: {url}")
         driver.get(url)
         print("Initial page loaded.")
-        save_debug_info(driver, "initial_load") 
+        save_debug_info(driver, "initial_load")
 
         print("Quickly trying to accept cookies if banner exists...")
-        cookie_selectors = [ 
-            (By.ID, "CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll"), 
-            (By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'allow all')]"), 
-            (By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accept all')]"), 
-            (By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'agree')]")    
+        cookie_selectors = [
+            (By.ID, "CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll"),
+            (By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'allow all')]"),
+            (By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accept all')]"),
+            (By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'agree')]")
         ]
         cookie_clicked = False
         for by_sel, selector in cookie_selectors:
-             if click_element_robustly(driver, by_sel, selector, timeout=3): 
+             if click_element_robustly(driver, by_sel, selector, timeout=3):
                   cookie_clicked = True
                   print(f"Potential cookie banner handled by {by_sel}='{selector}'.")
-                  time.sleep(1) 
+                  time.sleep(1)
                   save_debug_info(driver, f"after_cookie_attempt_{by_sel}")
-                  break 
+                  break
         if not cookie_clicked:
             print("Cookie banner not found quickly or click failed, proceeding.")
             save_debug_info(driver, "no_cookie_click")
 
-        # --- Click the "Google DNS" tab ---
         google_dns_tab_locator = (By.XPATH, "//a[normalize-space(.)='Google DNS' and contains(@href, '#google')]")
         print(f"Attempting to click 'Google DNS' tab with locator: {google_dns_tab_locator}...")
         if click_element_robustly(driver, google_dns_tab_locator[0], google_dns_tab_locator[1], timeout=10):
             print("'Google DNS' tab clicked successfully.")
-            # Give some time for the tab switch and potential JS loading initiated by the click
-            time.sleep(2) # Reduced from 5, as we'll have a more specific wait below
+            time.sleep(2) 
             save_debug_info(driver, "after_google_dns_tab_click")
 
-            # --- Wait for DNS records content within the Google DNS tab to appear ---
-            # We assume the content for Google DNS is within a div with id="google".
-            # We will wait for a specific, known element *inside* this div to ensure data is loaded.
-            # This XPath targets the green dot span before an IP, which is part of our regex.
-            # This is a more reliable indicator that the A records table is populated.
-            # The div with id="google" should be the parent or ancestor of these records.
-            # IMPORTANT: The actual content might be in a different sub-container within div#google.
-            # We are looking for an element that matches part of our regex *within* the #google div.
-            
-            # XPath for a A record entry (green dot + IP) *inside* the div with id="google"
-            # This assumes the structure from your regex: a span with 'bg-green-400' followed by an IP.
-            # We'll wait for the first such IP address to become visible.
-            first_google_dns_ip_locator = (By.XPATH, "//div[@id='google']//span[contains(@class, 'bg-green-400')]/following-sibling::span[string-length(normalize-space(text())) > 0 and count(text()) > 0 and text()[contains(.,'.')]]")
-            
-            wait_time_content = 20 # Increased wait time for content loading
-            print(f"Waiting for Google DNS A record content (e.g., first IP in div#google: '{first_google_dns_ip_locator[1]}') to be visible (up to {wait_time_content} seconds)...")
+            # XPath to locate the container of Google DNS results (identified by its specific paragraph)
+            google_dns_content_container_xpath = "//div[contains(@class, 'bg-white') and .//p[contains(text(), 'The Google DNS server responded')]]"
+            # XPath for the first A record IP address span *within* that container
+            first_google_dns_ip_locator = (By.XPATH, f"{google_dns_content_container_xpath}//h2[normalize-space()='A records']/following-sibling::div[1]//table/tbody/tr[1]/td[2]/span[1][string-length(normalize-space(text())) > 0 and contains(text(), '.')]")
+
+            wait_time_content = 25 # Increased wait time slightly
+            print(f"Waiting for Google DNS A record content (e.g., first IP: '{first_google_dns_ip_locator[1]}') to be visible (up to {wait_time_content} seconds)...")
             try:
                  WebDriverWait(driver, wait_time_content).until(
                      EC.visibility_of_element_located(first_google_dns_ip_locator)
                  )
                  print("Google DNS A record content (first IP) is visible. Proceeding to fetch source.")
-                 time.sleep(3) # Allow a bit more time for any final JS rendering after visibility
+                 time.sleep(3) 
                  save_debug_info(driver, "google_dns_content_visible")
             except TimeoutException:
-                print(f"Timeout waiting for Google DNS A record content (first IP) to be visible in div#google.")
-                print("This might mean div#google is not the correct container, or content structure changed, or content did not load.")
-                save_debug_info(driver, "timeout_waiting_google_dns_content")
-                # We will still try to get the page source and match, in case some data is there.
+                print(f"Timeout waiting for Google DNS A record content (first IP) to be visible.")
+                print("HTML structure for Google DNS A records might have changed, or content did not load as expected.")
+                save_debug_info(driver, "timeout_waiting_google_dns_content_NEW_LOCATOR")
         
-        else: # Google DNS tab click failed
+        else: 
             print("'Google DNS' tab could not be clicked. Regex matching will likely fail or be incorrect.")
             save_debug_info(driver, "google_dns_tab_click_failed_critical")
-            # If this click is essential, consider returning None or raising an error here.
 
-       
-        # --- Fetch final HTML and extract ---
-        # This part executes regardless of whether the specific content wait succeeded,
-        # to try and salvage data if possible, or to get the page source for debugging.
         print("Fetching final page source for regex matching...")
         html_content = driver.page_source
         with open("final_page_source_for_regex.html", "w", encoding='utf-8') as f: f.write(html_content)
         print("Saved final page source to final_page_source_for_regex.html")
 
-        matches = pattern.findall(html_content) 
+        # Use the NEW google_dns_pattern passed to the function
+        matches = new_google_dns_pattern.findall(html_content)
         
-        if matches: 
-            print(f"Regex found {len(matches)} potential matches.")
-            unique_ip_country_pairs = set() 
+        if matches:
+            print(f"Regex found {len(matches)} potential matches using NEW pattern.")
+            unique_ip_country_pairs = set()
 
-            for ip, city, country_en_raw_from_regex in matches: 
-                ip_clean = ip.strip() 
-                country_en_raw = country_en_raw_from_regex.strip() 
-                country_final = "" 
+            for ip, city, country_en_raw_from_regex in matches:
+                ip_clean = ip.strip()
+                country_en_raw = country_en_raw_from_regex.strip()
+                country_final = ""
 
-                country_en_upper = country_en_raw.upper() 
-                if country_en_upper == "US" or country_en_raw.lower() == "united states":
-                    country_final = "美国" 
-                elif country_en_upper == "HK" or country_en_raw.lower() == "hong kong":
-                    country_final = "香港" 
+                country_en_upper = country_en_raw.upper()
+                if country_en_upper == "US" or "UNITED STATES" in country_en_upper: # More robust check for "United States"
+                    country_final = "美国"
+                elif country_en_upper == "HK" or "HONG KONG" in country_en_upper: # More robust check for "Hong Kong"
+                    country_final = "香港"
                 
                 if not country_final and country_en_raw:
                     translated_cn = translate_to_chinese(country_en_raw)
                     if translated_cn and translated_cn != country_en_raw:
                         country_final = translated_cn
-                    else: 
-                        country_final = country_en_raw 
+                    else:
+                        country_final = country_en_raw
 
                 if country_final:
-                    country_final = country_final.strip() 
-                    original_country_for_log = country_final 
-                    if country_final == "韩国，共和国": 
-                        country_final = "韩国" 
+                    country_final = country_final.strip()
+                    original_country_for_log = country_final
+                    if country_final == "韩国，共和国":
+                        country_final = "韩国"
                         print(f"Applying string fix: changing '{original_country_for_log}' to '{country_final}'")
-                    elif country_final == "英国英国和北爱尔兰":  
-                        country_final = "英国" 
+                    elif "UNITED KINGDOM" in original_country_for_log.upper() or "英国英国" in original_country_for_log : # Broader check
+                        country_final = "英国"
                         print(f"Applying string fix: changing '{original_country_for_log}' to '{country_final}'")
                 
                 if ip_clean and country_final:
-                    unique_ip_country_pairs.add((ip_clean, country_final))  
-                else: 
+                    unique_ip_country_pairs.add((ip_clean, country_final))
+                else:
                     print(f"Warning: Empty IP or undetermined/empty Final Country. IP:'{ip_clean}', Raw_EN_Country:'{country_en_raw}', Determined_Country:'{country_final}'")
             
             if unique_ip_country_pairs:
                 print(f"Found {len(unique_ip_country_pairs)} unique (IP, Final Country) pairs after processing.")
-
+                # ... (rest of the file writing logic remains the same) ...
                 all_formatted_lines = [] 
                 hk_formatted_lines = []  
                 us_formatted_lines = []  
@@ -289,47 +274,52 @@ def extract_ip_country_dynamic(url, pattern, output_file="Google.txt"):
                         with open(env_file, "a") as f_env: f_env.write(f"Google_US_TXT_FILE={us_output_file}\n")
                 else:
                     print(f"No US specific results found, {us_output_file} not created.")
-            
-            else: 
+            else:
                  print("No valid unique (IP, Final Country) pairs found after cleaning and translation.")
                  save_debug_info(driver, "no_valid_unique_ip_country_pairs")
-        else: 
-            print("No matches found by regex in the final page source.")
-            save_debug_info(driver, "final_page_no_regex_match") 
+        else:
+            print(f"No matches found by NEW regex in the final page source after clicking Google DNS tab.")
+            save_debug_info(driver, "final_page_no_new_regex_match")
 
-        return matches if matches else None 
+        return matches if matches else None
 
-    except Exception as e: 
+    except Exception as e:
         print(f"An unhandled error occurred in Selenium operation: {e}")
-        traceback.print_exc() 
+        traceback.print_exc()
         if driver: save_debug_info(driver, "unhandled_exception")
         return None
-    finally: 
+    finally:
         if driver:
             print("Quitting WebDriver.")
             driver.quit()
 
 # --- Main execution block ---
 if __name__ == "__main__":
-    url = "https://www.nslookup.io/domains/bpb.yousef.isegaro.com/dns-records/" 
+    url = "https://www.nslookup.io/domains/bpb.yousef.isegaro.com/dns-records/"
     
-    pattern = re.compile(
-        r'<span class="mr-1.5 h-2 w-2 rounded-full bg-green-400"[^>]*></span>\s*([\d.]+)\s*</div>'
-        r'.*?' 
-        r'<div class="bg-slate-900 text-white[^"]*whitespace-nowrap"[^>]*>\s*'
-        r'([^,]+?)'                 
-        r'(?:\s*,\s*[^,]+?)*?'      
-        r'\s*,\s*([^<]+?)'          
-        r'\s*</div>', 
-        re.DOTALL | re.IGNORECASE 
+    # NEW Regex specifically for the Google DNS tab's A record structure
+    google_dns_pattern_new = re.compile(
+        r'<tr class="group">\s*'                                         # Start of an A record row (IP row)
+        r'.*?<td class="py-1">\s*(?:<img[^>]*>\s*)?<span>([\d.]+)</span>'  # Capture IP (Group 1) from its span, img is optional
+        r'.*?</tr>\s*'                                                   # End of IP row
+        r'<tr class="hidden">\s*<td colspan="3">\s*<div[^>]*>\s*'        # Start of the hidden location row and its inner div
+        r'.*?<a href="https://www.google.com/maps/search/[^"]*"[^>]*>'   # Location link
+        r'\s*([^<,]+?)\s*,'                                              # Capture City (Group 2) - non-greedy
+        r'(?:[^,]+?,\s*)?'                                               # Optional State/Region (non-capturing, non-greedy)
+        r'\s*([^<]+?)\s*'                                                # Capture Country (Group 3) - non-greedy, up to next tag
+        r'</a>'                                                          # End of location link
+        # The rest of the hidden row can vary, so we make it more general
+        r'.*?</tr>',                                                     # End of hidden location row
+        re.DOTALL | re.IGNORECASE
     )
 
-    output_filename = "Google.txt" 
+    output_filename = "Google.txt"
 
     print(f"Fetching and parsing URL: {url}")
-    results = extract_ip_country_dynamic(url, pattern, output_file=output_filename)
+    # Pass the NEW pattern to the function
+    results = extract_ip_country_dynamic(url, google_dns_pattern_new, output_file=output_filename)
 
-    if results: 
+    if results:
         print(f"\n--- Regex initially found {len(results)} matches. Check output files for processed results. ---")
         if os.path.exists(output_filename):
             print(f"Main output file: {output_filename}")
